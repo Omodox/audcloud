@@ -1,10 +1,16 @@
-var express = require("express");
-var app = express();
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+
+
+io.on('connection', function(socket){
+  console.log('a user connected');
+});
 
 
 const MongoClient = require('mongodb').MongoClient;
 
- 
+
 // Connection URL
 const url = 'mongodb://localhost:27017';
  
@@ -14,10 +20,15 @@ const dbName = 'test';
 // Use connect method to connect to the server
 
 app.get("/", function(request, response){
+
     MongoClient.connect(url, function(err, client) {
+
         console.log("Connected successfully to server");
+
         const db = client.db(dbName);
+
       db.collection('users').insert({name : 'Lorem'});
+      
       const lorme = db.collection('users').find().toArray(function (err,docs) {
         response.send(docs);
       });
