@@ -1,46 +1,21 @@
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
 
+let app = require('express')();
+let http = require('http').Server(app);
+let io = require('socket.io')(http);
 
-io.on('connection', function(socket){
-  console.log('a user connected');
+io.on('connection', (socket) => {
+  console.log('USER CONNECTED');
+
+  socket.on('disconnect', function(){
+    console.log('USER DISCONNECTED');
+  });
+
+  socket.on('add-message', (message) => {
+    io.emit('message', {type:'new-message', text: message});
+    console.log(message);
+  });
 });
 
-
-const MongoClient = require('mongodb').MongoClient;
-
-
-// Connection URL
-const url = 'mongodb://localhost:27017';
- 
-// Database Name
-const dbName = 'test';
- 
-// Use connect method to connect to the server
-
-app.get("/", function(request, response){
-
-    MongoClient.connect(url, function(err, client) {
-
-        console.log("Connected successfully to server");
-
-        const db = client.db(dbName);
-
-      db.collection('users').insert({name : 'Lorem'});
-      
-      const lorme = db.collection('users').find().toArray(function (err,docs) {
-        response.send(docs);
-      });
-      });
-    
+http.listen(3000, () => {
+  console.log('started on port 8080');
 });
-app.get("/about", function(request, response){
-     
-    response.send("<h1>О сайте</h1>");
-});
-app.get("/contact", function(request, response){
-     
-    response.send("<h1>Контакты</h1>");
-});
-app.listen(3000);
