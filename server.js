@@ -1,8 +1,10 @@
-
 let app = require('express')();
 let http = require('http').Server(app);
 let io = require('socket.io')(http);
 let bodyParser = require('body-parser');
+let crypto = require('crypto');
+const skey = '8888887';
+
 
 // Add headers
 app.use(function (req, res, next) {
@@ -58,33 +60,63 @@ io.on('connection', (socket) => {
 
 app.get("/test", function(request, response){
 
-  console.log(request.query.key);
-     
-    response.send("<h1>О сайте</h1>");
+  // console.log(request.query.key);
+
+// response.send(request.query.key);
+    response.send(hash);
 });
 
 app.post('/login', function (req, res) {
-
-// Connection URL
 const url = 'mongodb://localhost:27017';
-// Database Name
 const dbName = 'audcloud';
-// Use connect method to connect to the server
-
     MongoClient.connect(url, function(err, client) {
         console.log("Connected successfully to server");
         const db = client.db(dbName);
       // db.collection('users').insert({email : 'admin@audline.net', password : 'nimda321'});
-      const lorme = db.collection('users').find(req.body).toArray(function (err,docs) {
-        res.send(docs);
-        console.log(docs);
+      const lorem = db.collection('users').find(req.body).toArray(function (err,docs) {
+        if (docs[0]) {
+          const hash = crypto.createHmac('sha256', skey)
+          .update(docs[0].password + docs[0].email)
+          .digest('hex');
+          db.collection('users').update(req.body,{$set : {sid : hash}});
+          // console.log('hash');
+          res.send({'sid': hash});
+        }
+        else res.send({});
       });
       });
-
-
   // res.send(req.body);
-  console.log(req.query);
-})
+  // console.log(req.query);
+});
+
+app.get('/my_playlist', function (req, res) {
+
+  const url = 'mongodb://localhost:27017';
+  const dbName = 'audcloud';
+      MongoClient.connect(url, function(err, client) {
+          const db = client.db(dbName);
+        const lorem = db.collection('users').update({'sid' : req.query.sid},{$push: {
+          'audio_liked' : { 'id' : req.query.track} }});
+        });
+     res.send({});
+  
+  });
+
+
+  app.post('/audio_load', function (req, res) {
+    const url = 'mongodb://localhost:27017';
+    const dbName = 'audcloud';
+        MongoClient.connect(url, function(err, client) {
+
+            const db = client.db(dbName);
+          // db.collection('users').insert({email : 'admin@audline.net', password : 'nimda321'});
+          // db.collection('audio').insert(req.body);
+          console.log(req.body);
+          
+          });
+     
+      // console.log(req.query);
+    });
 
 
 http.listen(3000, () => {
