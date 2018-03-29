@@ -89,33 +89,61 @@ const dbName = 'audcloud';
   // console.log(req.query);
 });
 
-app.get('/my_playlist', function (req, res) {
+app.post('/my_playlist', function (req, res) {
 
   const url = 'mongodb://localhost:27017';
   const dbName = 'audcloud';
       MongoClient.connect(url, function(err, client) {
           const db = client.db(dbName);
-        const lorem = db.collection('users').update({'sid' : req.query.sid},{$push: {
-          'audio_liked' : { 'id' : req.query.track} }});
-        });
+          console.log(req.body.track);
+        const lorem = db.collection('users').update({'sid' : req.body.sid},{$push: {
+          'audio_liked' : { 'id' : req.body.track._id} }});
+        }); 
      res.send({});
   
   });
 
 
-  app.post('/audio_load', function (req, res) {
+  app.get('/get_my_playlist', function (req, res) {
     const url = 'mongodb://localhost:27017';
     const dbName = 'audcloud';
         MongoClient.connect(url, function(err, client) {
-
             const db = client.db(dbName);
-          // db.collection('users').insert({email : 'admin@audline.net', password : 'nimda321'});
-          // db.collection('audio').insert(req.body);
-          console.log(req.body);
-          
-          });
-     
-      // console.log(req.query);
+          // const lorem = db.collection('users').find({_id : ObjectId("5abccfb99315016132fd2989")})
+             const lorem = db.collection('users').find({ sid : req.query.sid})
+          .project({ audio_liked: 1, _id: 0 })
+          .toArray(
+            function (err,docs) {
+               res.send(docs[0].audio_liked); 
+              const lorem = db.collection('audio').find({$or : docs[0].audio_liked})
+              .toArray(
+                function (err,docs) {
+                  // res.send(docs);
+                }
+              );
+              // console.log(docs);
+              // res.send(docs);
+            }
+          );
+          });   
+    });
+
+
+  app.get('/audio', function (req, res) {
+
+    const url = 'mongodb://localhost:27017';
+    const dbName = 'audcloud';
+        MongoClient.connect(url, function(err, client) {
+            const db = client.db(dbName);
+          const audio_list =  db.collection('audio').aggregate([{$sample: {size: 150}}])
+          .toArray(
+            function (err,docs) {
+              // console.log(docs);
+              res.send(docs);
+            }
+          )
+          }); 
+
     });
 
 
