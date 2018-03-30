@@ -5,7 +5,6 @@ let bodyParser = require('body-parser');
 let crypto = require('crypto');
 const skey = '8888887';
 
-
 // Add headers
 app.use(function (req, res, next) {
   // Website you wish to allow to connect
@@ -32,6 +31,7 @@ app.use(bodyParser.urlencoded({
 }));
 
 const MongoClient = require('mongodb').MongoClient;
+ObjectId = require('mongodb').ObjectID;
 
 let rooms = [];
 
@@ -97,7 +97,7 @@ app.post('/my_playlist', function (req, res) {
           const db = client.db(dbName);
           console.log(req.body.track);
         const lorem = db.collection('users').update({'sid' : req.body.sid},{$push: {
-          'audio_liked' : { 'id' : req.body.track._id} }});
+          'audio_liked' : { '_id' : req.body.track._id} }});
         }); 
      res.send({});
   
@@ -109,20 +109,25 @@ app.post('/my_playlist', function (req, res) {
     const dbName = 'audcloud';
         MongoClient.connect(url, function(err, client) {
             const db = client.db(dbName);
-          // const lorem = db.collection('users').find({_id : ObjectId("5abccfb99315016132fd2989")})
              const lorem = db.collection('users').find({ sid : req.query.sid})
           .project({ audio_liked: 1, _id: 0 })
           .toArray(
             function (err,docs) {
-               res.send(docs[0].audio_liked); 
+
+              //  res.send(docs[0].audio_liked);
+
+               var i = 0; 
+               docs[0].audio_liked.forEach(element => {
+                docs[0].audio_liked[i] = {_id: ObjectId(element._id) };
+                 i++;
+               });
+              //  res.send(docs[0].audio_liked);
               const lorem = db.collection('audio').find({$or : docs[0].audio_liked})
               .toArray(
                 function (err,docs) {
-                  // res.send(docs);
+                  res.send(docs);
                 }
               );
-              // console.log(docs);
-              // res.send(docs);
             }
           );
           });   
@@ -130,7 +135,6 @@ app.post('/my_playlist', function (req, res) {
 
 
   app.get('/audio', function (req, res) {
-
     const url = 'mongodb://localhost:27017';
     const dbName = 'audcloud';
         MongoClient.connect(url, function(err, client) {
@@ -145,6 +149,22 @@ app.post('/my_playlist', function (req, res) {
           }); 
 
     });
+
+    app.get('/band', function (req, res) {
+      const url = 'mongodb://localhost:27017';
+      const dbName = 'audcloud';
+          MongoClient.connect(url, function(err, client) {
+              const db = client.db(dbName);
+            const audio_list =  db.collection('audio').find({performer_url : req.query.band})
+            .toArray(
+              function (err,docs) {
+                // console.log(docs);
+                res.send(docs);
+              }
+            )
+            }); 
+  
+      });
 
 
 http.listen(3000, () => {
