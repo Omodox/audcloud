@@ -95,9 +95,49 @@ app.post('/my_playlist', function (req, res) {
   const dbName = 'audcloud';
       MongoClient.connect(url, function(err, client) {
           const db = client.db(dbName);
-          console.log(req.body.track);
-        const lorem = db.collection('users').update({'sid' : req.body.sid},{$push: {
+          // console.log(req.body.sid);
+    db.collection('users').find(
+      {$and : 
+        [
+          {audio_liked: 
+            {$elemMatch: 
+              { _id : req.body.track._id }
+            }
+          },
+              {   sid : req.body.sid }
+            ]
+          }
+        )
+          .toArray(
+            function (err,docs) { 
+                if (docs.length <= 0) {
+          db.collection('users').update({'sid' : req.body.sid},{$push: {
           'audio_liked' : { '_id' : req.body.track._id} }});
+                }
+                else {
+                  // db.collection('users').update(
+                  //   {$and : 
+                  //     [
+                  //       {audio_liked: 
+                  //         {$elemMatch: 
+                  //           { _id : req.body.track._id }
+                  //         }
+                  //       },
+                  //           {   sid : req.body.sid }
+                  //         ]
+                  //       },
+                  //       {
+                  //         $unset: { 
+                             
+                  //         }
+                  //       }
+                  // );
+                  console.log('will be soon');
+                }
+        
+            }
+           );
+       
         }); 
      res.send({});
   
