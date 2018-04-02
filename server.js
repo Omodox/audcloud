@@ -115,23 +115,17 @@ app.post('/my_playlist', function (req, res) {
           'audio_liked' : { '_id' : req.body.track._id} }});
                 }
                 else {
-                  // db.collection('users').update(
-                  //   {$and : 
-                  //     [
-                  //       {audio_liked: 
-                  //         {$elemMatch: 
-                  //           { _id : req.body.track._id }
-                  //         }
-                  //       },
-                  //           {   sid : req.body.sid }
-                  //         ]
-                  //       },
-                  //       {
-                  //         $unset: { 
-                             
-                  //         }
-                  //       }
-                  // );
+                  db.collection('users').update( 
+                  {sid : req.body.sid },
+                  {
+                    $pull :  
+                        {audio_liked: 
+                           
+                            { _id : req.body.track._id }
+                          
+                        }  
+                  }
+                  );
                   console.log('will be soon');
                 }
         
@@ -142,6 +136,55 @@ app.post('/my_playlist', function (req, res) {
      res.send({});
   
   });
+
+
+  app.post('/my_blaclist', function (req, res) {
+
+    const url = 'mongodb://localhost:27017';
+    const dbName = 'audcloud';
+        MongoClient.connect(url, function(err, client) {
+            const db = client.db(dbName);
+            // console.log(req.body.sid);
+      db.collection('users').find(
+        {$and : 
+          [
+            {audio_black_list: 
+              {$elemMatch: 
+                { _id : req.body.track._id }
+              }
+            },
+                {   sid : req.body.sid }
+              ]
+            }
+          )
+            .toArray(
+              function (err,docs) { 
+                  if (docs.length <= 0) {
+            db.collection('users').update({'sid' : req.body.sid},{$push: {
+            'audio_black_list' : { '_id' : req.body.track._id} }});
+                  }
+                  else {
+                    db.collection('users').update( 
+                    {sid : req.body.sid },
+                    {
+                      $pull :  
+                          {audio_black_list: 
+                             
+                              { _id : req.body.track._id }
+                            
+                          }  
+                    }
+                    );
+                    console.log('will be soon');
+                  }
+          
+              }
+             );
+         
+          }); 
+       res.send({});
+    
+    });
 
 
   app.get('/get_my_playlist', function (req, res) {
@@ -174,6 +217,36 @@ app.post('/my_playlist', function (req, res) {
     });
 
 
+    app.get('/get_my_blacklist', function (req, res) {
+      const url = 'mongodb://localhost:27017';
+      const dbName = 'audcloud';
+          MongoClient.connect(url, function(err, client) {
+              const db = client.db(dbName);
+               const lorem = db.collection('users').find({ sid : req.query.sid})
+            .project({ audio_black_list: 1, _id: 0 })
+            .toArray(
+              function (err,docs) {
+  
+                //  res.send(docs[0].audio_liked);
+  
+                 var i = 0; 
+                 docs[0].audio_black_list.forEach(element => {
+                  docs[0].audio_black_list[i] = {_id: ObjectId(element._id) };
+                   i++;
+                 });
+                //  res.send(docs[0].audio_liked);
+                const lorem = db.collection('audio').find({$or : docs[0].audio_black_list})
+                .toArray(
+                  function (err,docs) {
+                    res.send(docs);
+                  }
+                );
+              }
+            );
+            });   
+      });
+
+
   app.get('/audio', function (req, res) {
     const url = 'mongodb://localhost:27017';
     const dbName = 'audcloud';
@@ -187,8 +260,40 @@ app.post('/my_playlist', function (req, res) {
             }
           )
           }); 
-
     });
+
+    app.get('/search', function (req, res) {
+      const url = 'mongodb://localhost:27017';
+      const dbName = 'audcloud';
+          MongoClient.connect(url, function(err, client) {
+              const db = client.db(dbName);
+              if (req.query.q) {
+                const audio_list =  db.collection('audio').find({$or : [
+                  { 'name': new RegExp(req.query.q, 'i') },
+                  { 'performer_name': new RegExp(req.query.q, 'i') }
+                ]} )
+                .toArray(
+                  function (err,docs) {
+                    // console.log(docs);
+                    res.send(docs);
+                  }
+                )
+              }
+              console.log(req.query.g);
+              if (req.query.g) {
+                const audio_list =  db.collection('audio').find(
+                  { 'genre': new RegExp(req.query.g, 'i') }
+                )
+                .toArray(
+                  function (err,docs) {
+                    // console.log(docs);
+                    res.send(docs);
+                  }
+                )
+              }
+     
+            }); 
+      });
 
     app.get('/band', function (req, res) {
       const url = 'mongodb://localhost:27017';
