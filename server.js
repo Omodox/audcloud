@@ -205,12 +205,12 @@ app.post('/my_playlist', function (req, res) {
                  i++;
                });
               //  res.send(docs[0].audio_liked);
-              const lorem = db.collection('audio').find({$or : docs[0].audio_liked})
+              const lorem = db.collection('audio').find({$or : docs[0].audio_liked}).sort({"_id" : -1})
               .toArray(
                 function (err,docs) {
                   res.send(docs);
                 }
-              );
+              );  
             }
           );
           });   
@@ -310,6 +310,20 @@ app.post('/my_playlist', function (req, res) {
             }); 
   
       });
+
+
+
+      app.post('/newtrack', function (req, res) {
+        const url = 'mongodb://localhost:27017';
+        const dbName = 'audcloud';
+            MongoClient.connect(url, function(err, client) {
+                const db = client.db(dbName);
+       db.collection('audio').insert(req.body.track);
+
+              }); 
+           res.send(req.body);
+        
+        });
 
 
 http.listen(3000, () => {
